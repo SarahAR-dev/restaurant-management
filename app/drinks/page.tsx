@@ -37,6 +37,8 @@ export default function DrinksPage() {
   const [drinks, setDrinks] = useState<Drink[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [drinkToDelete, setDrinkToDelete] = useState<Drink | null>(null)
   const [editingDrink, setEditingDrink] = useState<Drink | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [formData, setFormData] = useState({
@@ -48,6 +50,7 @@ export default function DrinksPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
+
 
   // Charger les boissons depuis l'API
   useEffect(() => {
@@ -76,71 +79,72 @@ export default function DrinksPage() {
   )
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  
-  // Empêcher les soumissions multiples
-  if (isSubmitting) {
-    return
-  }
+    e.preventDefault()
 
-  const drinkData = {
-    name: formData.name,
-    description: formData.description,
-    price: parseFloat(formData.price),
-    imageUrl: formData.imageUrl,
-    available: formData.available,
-  }
 
-  // BLOQUER LE BOUTON
-  setIsSubmitting(true)
+    // Empêcher les soumissions multiples
+    if (isSubmitting) {
+      return
+    }
 
-  try {
-    if (editingDrink) {
-      // Mise à jour
-      const response = await fetch(`/api/drinks`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editingDrink.id, ...drinkData }),
-      })
-      if (!response.ok) {
-        setIsSubmitting(false)
-        throw new Error("Erreur lors de la mise à jour")
-      }
-    } else {
-      // Création
-      const response = await fetch("/api/drinks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(drinkData),
-      })
-      if (!response.ok) {
-        setIsSubmitting(false)
-        throw new Error("Erreur lors de la création")
-      }
+    const drinkData = {
+      name: formData.name,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      imageUrl: formData.imageUrl,
+      available: formData.available,
     }
     
-    // Recharger les données
-    await loadDrinks()
-    
-    // Réinitialiser le formulaire
-    setIsDialogOpen(false)
-    setEditingDrink(null)
-    setFormData({
-      name: "",
-      description: "",
-      price: "",
-      imageUrl: "",
-      available: true,
-    })
-    alert(editingDrink ? "✅ Boisson modifiée avec succès !" : "✅ Boisson créée avec succès !")
-  } catch (error) {
-    console.error("Erreur:", error)
-    alert("❌ Une erreur est survenue")
-  } finally {
-    // DÉBLOQUER LE BOUTON
-    setIsSubmitting(false)
+    // BLOQUER LE BOUTON
+    setIsSubmitting(true)
+
+    try {
+      if (editingDrink) {
+        // Mise à jour
+        const response = await fetch(`/api/drinks`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editingDrink.id, ...drinkData }),
+        })
+        if (!response.ok) {
+          setIsSubmitting(false)
+          throw new Error("Erreur lors de la mise à jour")
+        }
+      } else {
+        // Création
+        const response = await fetch("/api/drinks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(drinkData),
+        })
+        if (!response.ok) {
+          setIsSubmitting(false)
+          throw new Error("Erreur lors de la création")
+        }
+      }
+      
+      // Recharger les données
+      await loadDrinks()
+
+      // Réinitialiser le formulaire
+      setIsDialogOpen(false)
+      setEditingDrink(null)
+      setFormData({
+        name: "",
+        description: "",
+        price: "",
+        imageUrl: "",
+        available: true,
+      })
+      alert(editingDrink ? "✅ Boisson modifiée avec succès !" : "✅ Boisson créée avec succès !")
+    } catch (error) {
+      console.error("Erreur:", error)
+      alert("❌ Une erreur est survenue")
+    } finally {
+      // DÉBLOQUER LE BOUTON
+      setIsSubmitting(false)
+    }
   }
-}
 
   const handleEdit = (drink: Drink) => {
     setEditingDrink(drink)
@@ -154,20 +158,27 @@ export default function DrinksPage() {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette boisson ?")) return
-
+  const confirmDelete = async () => {
+    if (!drinkToDelete) return
+    
     try {
       const response = await fetch("/api/drinks", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: drinkToDelete.id }),
       })
-      if (!response.ok) throw new Error("Erreur lors de la suppression")
+      
+      if (!response.ok) {
+        throw new Error("Erreur lors de la suppression")
+      }
+      
       await loadDrinks()
+      setDeleteDialogOpen(false)
+      setDrinkToDelete(null)
+      alert("✅ Boisson supprimée avec succès!")
     } catch (error) {
       console.error("Erreur:", error)
-      alert("Impossible de supprimer la boisson")
+      alert("❌ Impossible de supprimer la boisson")
     }
   }
 
@@ -230,16 +241,16 @@ export default function DrinksPage() {
           <p className="text-muted-foreground">Gérez votre menu de boissons</p>
         </div>
         <Dialog 
-  open={isDialogOpen} 
-  onOpenChange={(open) => {
-    if (!isSubmitting) {
-      setIsDialogOpen(open)
-      if (!open) {
-        handleDialogClose()
-      }
-    }
-  }}
->
+          open={isDialogOpen} 
+          onOpenChange={(open) => {
+            if (!isSubmitting) {
+              setIsDialogOpen(open)
+              if (!open) {
+                handleDialogClose()
+              }
+            }
+          }}
+        >
           <DialogTrigger >
             <Button onClick={() => setEditingDrink(null)} className="gap-2">
               <Plus className="h-4 w-4" />
@@ -304,7 +315,7 @@ export default function DrinksPage() {
                     placeholder="/images/drinks/nom-boisson.jpg"
                   />
                 </div>
-                <div className="grid gap-2">
+                {/*<div className="grid gap-2">
                   <Label htmlFor="available">Disponibilité</Label>
                   <Select
                     value={formData.available ? "true" : "false"}
@@ -320,31 +331,31 @@ export default function DrinksPage() {
                       <SelectItem value="false">Indisponible</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div>*/}
               </div>
               <DialogFooter>
-  <Button 
-    type="button" 
-    variant="outline" 
-    onClick={handleDialogClose}
-    disabled={isSubmitting}
-  >
-    Annuler
-  </Button>
-  <Button 
-    type="submit"
-    disabled={isSubmitting}
-  >
-    {isSubmitting ? (
-      <>
-        <span className="animate-spin mr-2">⏳</span>
-        {editingDrink ? "Modification en cours..." : "Création en cours..."}
-      </>
-    ) : (
-      editingDrink ? "Mettre à jour" : "Créer"
-    )}
-  </Button>
-</DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleDialogClose}
+                  disabled={isSubmitting}
+                >
+                  Annuler
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      {editingDrink ? "Modification..." : "Création..."}
+                    </>
+                  ) : (
+                    editingDrink ? "Mettre à jour" : "Créer"
+                  )}
+                </Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
@@ -365,10 +376,9 @@ export default function DrinksPage() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filteredDrinks.map((drink) => (
           <div
-  key={drink.id}
-  className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-  onClick={() => router.push(`/drinks/${drink.id}`)}
->
+            key={drink.id}
+            className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+          >
             {/* Image */}
             <div className="relative h-48 bg-muted overflow-hidden">
               <img
@@ -379,18 +389,18 @@ export default function DrinksPage() {
                   e.currentTarget.src = "/placeholder.svg"
                 }}
               />
-              <div className="absolute top-2 right-2">
-                <button
-                  onClick={() => toggleAvailability(drink)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                    drink.available
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                      : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                  }`}
-                >
-                  {drink.available ? "Disponible" : "Indisponible"}
-                </button>
-              </div>
+              {/* Bouton supprimer - SUBTIL - juste l'icône */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDrinkToDelete(drink)
+                  setDeleteDialogOpen(true)
+                }}
+                className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-red-600 text-white transition-colors"
+                title="Supprimer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Contenu */}
@@ -402,7 +412,7 @@ export default function DrinksPage() {
                 </p>
               </div>
 
-              {/* Prix et catégorie */}
+              {/* Prix */}
               <div className="flex items-center justify-between">
                 <span className="text-xl font-bold text-primary">
                   {drink.price.toFixed(2)} DA
@@ -413,32 +423,36 @@ export default function DrinksPage() {
                 </span>
               </div>
 
-              {/* Boutons Modifier et Supprimer */}
+              {/* Boutons Modifier et Disponibilité */}
               <div className="flex gap-2 pt-2">
                 <Button
-  variant="outline"
-  size="sm"
-  className="flex-1 gap-2 bg-transparent"
-  onClick={(e) => {
-    e.stopPropagation()
-    handleEdit(drink)
-  }}
->
-  <Pencil className="h-4 w-4" />
-  Modifier
-</Button>
-<Button
-  variant="destructive"
-  size="sm"
-  className="flex-1 gap-2"
-  onClick={(e) => {
-    e.stopPropagation()
-    handleDelete(drink.id)
-  }}
->
-  <Trash2 className="h-4 w-4" />
-  Supprimer
-</Button>
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleEdit(drink)
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                  Modifier
+                </Button>
+                
+                {/* Bouton de disponibilité - COLORÉ et VISIBLE */}
+                <Button
+                  size="sm"
+                  className={`flex-1 gap-2 font-semibold ${
+                    drink.available
+                      ? "bg-green-600 hover:bg-green-700 text-white border-green-700"
+                      : "bg-red-600 hover:bg-red-700 text-white border-red-700"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleAvailability(drink)
+                  }}
+                >
+                  {drink.available ? "Disponible" : "Indisponible"}
+                </Button>
               </div>
             </div>
           </div>
@@ -464,6 +478,36 @@ export default function DrinksPage() {
           <p className="text-2xl font-bold">{stats.avgPrice} DA</p>
         </div>
       </div>
+
+      {/* Dialog de confirmation de suppression */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer "{drinkToDelete?.name}" ?
+              Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setDrinkToDelete(null)
+              }}
+            >
+              Annuler
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+            >
+              Supprimer définitivement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

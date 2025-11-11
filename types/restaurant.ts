@@ -14,6 +14,7 @@ export interface Order {
   id: string
   items: OrderItem[]
   status: "pending" | "preparing" | "ready" | "completed" | "cancelled"
+  orderType: 'dine-in' | 'takeout';
   total: number
   createdAt: Date
   updatedAt: Date

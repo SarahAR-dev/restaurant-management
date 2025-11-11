@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-// Interface locale au lieu d'importer MenuItem
 interface MenuItem {
   id: string
   name: string
@@ -40,6 +39,8 @@ export default function DishesPage() {
   const [dishes, setDishes] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [dishToDelete, setDishToDelete] = useState<MenuItem | null>(null)
   const [editingDish, setEditingDish] = useState<MenuItem | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [formData, setFormData] = useState({
@@ -53,7 +54,6 @@ export default function DishesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
    
-  // Charger les plats depuis l'API
   useEffect(() => {
     loadDishes()
   }, [])
@@ -82,7 +82,6 @@ export default function DishesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Empêcher les soumissions multiples
     if (isSubmitting) {
       return
     }
@@ -96,12 +95,10 @@ export default function DishesPage() {
       available: formData.available,
     }
 
-    // BLOQUER LE BOUTON
     setIsSubmitting(true)
 
     try {
       if (editingDish) {
-        // Mise à jour
         const response = await fetch(`/api/dishes`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -112,7 +109,6 @@ export default function DishesPage() {
           throw new Error("Erreur lors de la mise à jour")
         }
       } else {
-        // Création
         const response = await fetch("/api/dishes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -124,10 +120,8 @@ export default function DishesPage() {
         }
       }
       
-      // Recharger les données
       await loadDishes()
       
-      // Réinitialiser le formulaire
       setIsDialogOpen(false)
       setEditingDish(null)
       setFormData({
@@ -143,7 +137,6 @@ export default function DishesPage() {
       console.error("Erreur:", error)
       alert("❌ Une erreur est survenue")
     } finally {
-      // DÉBLOQUER LE BOUTON
       setIsSubmitting(false)
     }
   }
@@ -161,40 +154,27 @@ export default function DishesPage() {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    console.log("🗑️ Tentative de suppression du plat ID:", id)
+  const confirmDelete = async () => {
+    if (!dishToDelete) return
     
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce plat ?")) {
-      console.log("❌ Suppression annulée par l'utilisateur")
-      return
-    }
-
     try {
-      console.log("📤 Envoi de la requête DELETE...")
       const response = await fetch("/api/dishes", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: dishToDelete.id }),
       })
       
-      console.log("📥 Réponse reçue:", response.status, response.ok)
-      
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error("❌ Erreur API:", errorData)
         throw new Error("Erreur lors de la suppression")
       }
       
-      const result = await response.json()
-      console.log("✅ Réponse de l'API:", result)
-      
-      console.log("🔄 Rechargement des plats...")
       await loadDishes()
-      
-      console.log("✅ Plat supprimé avec succès!")
+      setDeleteDialogOpen(false)
+      setDishToDelete(null)
+      alert("✅ Plat supprimé avec succès!")
     } catch (error) {
-      console.error("💥 Erreur complète:", error)
-      alert("Impossible de supprimer le plat")
+      console.error("Erreur:", error)
+      alert("❌ Impossible de supprimer le plat")
     }
   }
 
@@ -233,15 +213,6 @@ export default function DishesPage() {
     })
   }
 
-  const stats = {
-    total: dishes.length,
-    available: dishes.filter((d) => d.available).length,
-    unavailable: dishes.filter((d) => !d.available).length,
-    avgPrice: dishes.length > 0 
-      ? (dishes.reduce((sum, d) => sum + d.price, 0) / dishes.length).toFixed(2)
-      : "0.00",
-  }
-
   if (loading) {
     return (
       <div className="p-8">
@@ -252,7 +223,6 @@ export default function DishesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Gestion des plats</h1>
@@ -269,7 +239,7 @@ export default function DishesPage() {
             }
           }}
         >
-          <DialogTrigger>
+          <DialogTrigger >
             <Button onClick={() => setEditingDish(null)} className="gap-2">
               <Plus className="h-4 w-4" />
               Ajouter un plat
@@ -353,7 +323,7 @@ export default function DishesPage() {
                     placeholder="/images/dishes/nom-du-plat.jpg"
                   />
                 </div>
-                <div className="grid gap-2">
+                {/*<div className="grid gap-2">
                   <Label htmlFor="available">Disponibilité</Label>
                   <Select
                     value={formData.available ? "true" : "false"}
@@ -369,7 +339,7 @@ export default function DishesPage() {
                       <SelectItem value="false">Indisponible</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div>*/}
               </div>
               <DialogFooter>
                 <Button 
@@ -387,7 +357,7 @@ export default function DishesPage() {
                   {isSubmitting ? (
                     <>
                       <span className="animate-spin mr-2">⏳</span>
-                      {editingDish ? "Modification en cours..." : "Création en cours..."}
+                      {editingDish ? "Modification..." : "Création..."}
                     </>
                   ) : (
                     editingDish ? "Mettre à jour" : "Créer"
@@ -399,7 +369,6 @@ export default function DishesPage() {
         </Dialog>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -410,16 +379,13 @@ export default function DishesPage() {
         />
       </div>
 
-      {/* Grille de plats */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filteredDishes.map((dish) => (
           <div
             key={dish.id}
-            className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => router.push(`/dishes/${dish.id}`)}
+            className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
           >
-            {/* Image */}
-            <div className="relative h-48 bg-muted overflow-hidden ">
+            <div className="relative h-48 bg-muted overflow-hidden">
               <img
                 src={dish.imageUrl || "/placeholder.svg"}
                 alt={dish.name}
@@ -428,24 +394,20 @@ export default function DishesPage() {
                   e.currentTarget.src = "/placeholder.svg"
                 }}
               />
-              <div className="absolute top-2 right-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleAvailability(dish)
-                  }}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                    dish.available
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                      : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                  }`}
-                >
-                  {dish.available ? "Disponible" : "Indisponible"}
-                </button>
-              </div>
+              {/* Bouton supprimer - SUBTIL - juste l'icône */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDishToDelete(dish)
+                  setDeleteDialogOpen(true)
+                }}
+                className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-red-600 text-white transition-colors"
+                title="Supprimer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Contenu */}
             <div className="p-4 space-y-3">
               <div>
                 <h3 className="font-semibold text-lg line-clamp-1">{dish.name}</h3>
@@ -454,7 +416,6 @@ export default function DishesPage() {
                 </p>
               </div>
 
-              {/* Prix et catégorie */}
               <div className="flex items-center justify-between">
                 <span className="text-xl font-bold text-primary">
                   {dish.price.toFixed(2)} DA
@@ -465,12 +426,12 @@ export default function DishesPage() {
                 </span>
               </div>
 
-              {/* Boutons Modifier et Supprimer */}
+              {/* Boutons Modifier et Disponibilité */}
               <div className="flex gap-2 pt-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 gap-2 bg-transparent"
+                  className="flex-1 gap-2"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleEdit(dish)
@@ -479,17 +440,21 @@ export default function DishesPage() {
                   <Pencil className="h-4 w-4" />
                   Modifier
                 </Button>
+                
+                {/* Bouton de disponibilité - COLORÉ et VISIBLE */}
                 <Button
-                  variant="destructive"
                   size="sm"
-                  className="flex-1 gap-2"
+                  className={`flex-1 gap-2 font-semibold ${
+                    dish.available
+                      ? "bg-green-600 hover:bg-green-700 text-white border-green-700"
+                      : "bg-red-600 hover:bg-red-700 text-white border-red-700"
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleDelete(dish.id)
+                    toggleAvailability(dish)
                   }}
                 >
-                  <Trash2 className="h-4 w-4" />
-                  Supprimer
+                  {dish.available ? "Disponible" : "Indisponible"}
                 </Button>
               </div>
             </div>
@@ -497,7 +462,6 @@ export default function DishesPage() {
         ))}
       </div>
 
-      {/* Message si aucun plat */}
       {filteredDishes.length === 0 && (
         <div className="text-center py-12">
           <UtensilsCrossed className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -506,6 +470,35 @@ export default function DishesPage() {
           </p>
         </div>
       )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer "{dishToDelete?.name}" ?
+              Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setDishToDelete(null)
+              }}
+            >
+              Annuler
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+            >
+              Supprimer définitivement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

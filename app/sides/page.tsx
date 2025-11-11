@@ -38,6 +38,8 @@ export default function SidesPage() {
   const [sides, setSides] = useState<Side[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [sideToDelete, setSideToDelete] = useState<Side | null>(null)
   const [editingSide, setEditingSide] = useState<Side | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [formData, setFormData] = useState({
@@ -50,7 +52,6 @@ export default function SidesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
 
-  // Charger les accompagnements depuis l'API
   useEffect(() => {
     loadSides()
   }, [])
@@ -79,7 +80,6 @@ export default function SidesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Empêcher les soumissions multiples
     if (isSubmitting) {
       return
     }
@@ -92,12 +92,10 @@ export default function SidesPage() {
       available: formData.available,
     }
 
-    // BLOQUER LE BOUTON
     setIsSubmitting(true)
 
     try {
       if (editingSide) {
-        // Mise à jour
         const response = await fetch(`/api/sides`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -108,7 +106,6 @@ export default function SidesPage() {
           throw new Error("Erreur lors de la mise à jour")
         }
       } else {
-        // Création
         const response = await fetch("/api/sides", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -120,10 +117,8 @@ export default function SidesPage() {
         }
       }
       
-      // Recharger les données
       await loadSides()
       
-      // Réinitialiser le formulaire
       setIsDialogOpen(false)
       setEditingSide(null)
       setFormData({
@@ -138,7 +133,6 @@ export default function SidesPage() {
       console.error("Erreur:", error)
       alert("❌ Une erreur est survenue")
     } finally {
-      // DÉBLOQUER LE BOUTON
       setIsSubmitting(false)
     }
   }
@@ -155,20 +149,27 @@ export default function SidesPage() {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet accompagnement ?")) return
-
+  const confirmDelete = async () => {
+    if (!sideToDelete) return
+    
     try {
       const response = await fetch("/api/sides", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: sideToDelete.id }),
       })
-      if (!response.ok) throw new Error("Erreur lors de la suppression")
+      
+      if (!response.ok) {
+        throw new Error("Erreur lors de la suppression")
+      }
+      
       await loadSides()
+      setDeleteDialogOpen(false)
+      setSideToDelete(null)
+      alert("✅ Accompagnement supprimé avec succès!")
     } catch (error) {
       console.error("Erreur:", error)
-      alert("Impossible de supprimer l'accompagnement")
+      alert("❌ Impossible de supprimer l'accompagnement")
     }
   }
 
@@ -241,7 +242,7 @@ export default function SidesPage() {
             }
           }}
         >
-          <DialogTrigger>
+          <DialogTrigger >
             <Button onClick={() => setEditingSide(null)} className="gap-2">
               <Plus className="h-4 w-4" />
               Ajouter un accompagnement
@@ -305,7 +306,7 @@ export default function SidesPage() {
                     placeholder="/images/sides/nom-accompagnement.jpg"
                   />
                 </div>
-                <div className="grid gap-2">
+                {/*<div className="grid gap-2">
                   <Label htmlFor="available">Disponibilité</Label>
                   <Select
                     value={formData.available ? "true" : "false"}
@@ -321,7 +322,7 @@ export default function SidesPage() {
                       <SelectItem value="false">Indisponible</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div>*/}
               </div>
               <DialogFooter>
                 <Button 
@@ -339,7 +340,7 @@ export default function SidesPage() {
                   {isSubmitting ? (
                     <>
                       <span className="animate-spin mr-2">⏳</span>
-                      {editingSide ? "Modification en cours..." : "Création en cours..."}
+                      {editingSide ? "Modification..." : "Création..."}
                     </>
                   ) : (
                     editingSide ? "Mettre à jour" : "Créer"
@@ -367,8 +368,7 @@ export default function SidesPage() {
         {filteredSides.map((side) => (
           <div
             key={side.id}
-            className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => router.push(`/sides/${side.id}`)}
+            className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
           >
             {/* Image */}
             <div className="relative h-48 bg-muted overflow-hidden">
@@ -380,21 +380,18 @@ export default function SidesPage() {
                   e.currentTarget.src = "/placeholder.svg"
                 }}
               />
-              <div className="absolute top-2 right-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleAvailability(side)
-                  }}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                    side.available
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                      : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                  }`}
-                >
-                  {side.available ? "Disponible" : "Indisponible"}
-                </button>
-              </div>
+              {/* Bouton supprimer - SUBTIL - juste l'icône */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSideToDelete(side)
+                  setDeleteDialogOpen(true)
+                }}
+                className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-red-600 text-white transition-colors"
+                title="Supprimer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Contenu */}
@@ -406,7 +403,7 @@ export default function SidesPage() {
                 </p>
               </div>
 
-              {/* Prix et catégorie */}
+              {/* Prix */}
               <div className="flex items-center justify-between">
                 <span className="text-xl font-bold text-primary">
                   {side.price.toFixed(2)} DA
@@ -417,12 +414,12 @@ export default function SidesPage() {
                 </span>
               </div>
 
-              {/* Boutons Modifier et Supprimer */}
+              {/* Boutons Modifier et Disponibilité */}
               <div className="flex gap-2 pt-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 gap-2 bg-transparent"
+                  className="flex-1 gap-2"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleEdit(side)
@@ -431,17 +428,21 @@ export default function SidesPage() {
                   <Pencil className="h-4 w-4" />
                   Modifier
                 </Button>
+                
+                {/* Bouton de disponibilité - COLORÉ et VISIBLE */}
                 <Button
-                  variant="destructive"
                   size="sm"
-                  className="flex-1 gap-2"
+                  className={`flex-1 gap-2 font-semibold ${
+                    side.available
+                      ? "bg-green-600 hover:bg-green-700 text-white border-green-700"
+                      : "bg-red-600 hover:bg-red-700 text-white border-red-700"
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleDelete(side.id)
+                    toggleAvailability(side)
                   }}
                 >
-                  <Trash2 className="h-4 w-4" />
-                  Supprimer
+                  {side.available ? "Disponible" : "Indisponible"}
                 </Button>
               </div>
             </div>
@@ -458,6 +459,36 @@ export default function SidesPage() {
           </p>
         </div>
       )}
+
+      {/* Dialog de confirmation de suppression */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer "{sideToDelete?.name}" ?
+              Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setSideToDelete(null)
+              }}
+            >
+              Annuler
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+            >
+              Supprimer définitivement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

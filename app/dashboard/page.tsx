@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { ShoppingCart, Package, DollarSign, Clock } from "lucide-react"
-
+import { VoiceOrderButton } from '@/components/ui/VoiceOrderButton';
 interface Order {
   id: string
   orderType: "dine-in" | "takeaway"
@@ -141,10 +141,13 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Tableau de bord</h1>
-        <p className="text-muted-foreground">Vue d'ensemble de votre restaurant</p>
-      </div>
+      <div className="flex items-center justify-between">
+  <div>
+    <h1 className="text-3xl font-bold">Tableau de bord</h1>
+    <p className="text-muted-foreground">Vue d'ensemble de votre restaurant</p>
+  </div>
+  <VoiceOrderButton assistantId="ed53a860-9424-48ab-84fe-f3f36e7f6cad" />
+</div>
 
       <div className="grid gap-4 md:grid-cols-4">
         {/* Commandes aujourd'hui */}

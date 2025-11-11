@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebase-admin'
+import { getDrinks, createDrink, updateDrink, deleteDrink } from '@/app/services/menu-service'
 
 // GET - Récupérer toutes les boissons
 export async function GET() {
   try {
-    const snapshot = await db.collection('drinks').get()
-    const drinks = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    const drinks = await getDrinks()  // ← Utilise le service
     return NextResponse.json(drinks)
   } catch (error) {
     console.error('Erreur:', error)
@@ -20,18 +16,9 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json()
-    const docRef = await db.collection('drinks').add({
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      imageUrl: data.imageUrl || '',
-      available: data.available !== undefined ? data.available : true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })
+    const result = await createDrink(data)  // ← Utilise le service
     return NextResponse.json({ 
-      id: docRef.id, 
-      ...data,
+      ...result,
       message: 'Boisson créée avec succès' 
     })
   } catch (error) {
@@ -50,14 +37,10 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
     }
 
-    await db.collection('drinks').doc(id).update({
-      ...updateData,
-      updatedAt: new Date()
-    })
+    const result = await updateDrink(id, updateData)  // ← Utilise le service
     
     return NextResponse.json({ 
-      id, 
-      ...updateData,
+      ...result,
       message: 'Boisson mise à jour avec succès' 
     })
   } catch (error) {
@@ -69,13 +52,14 @@ export async function PUT(request: Request) {
 // DELETE - Supprimer une boisson
 export async function DELETE(request: Request) {
   try {
-    const { id } = await request.json()
+    const body = await request.json()
+    const { id } = body
     
     if (!id) {
       return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
     }
 
-    await db.collection('drinks').doc(id).delete()
+    await deleteDrink(id)  // ← Utilise le service
     
     return NextResponse.json({ 
       success: true,

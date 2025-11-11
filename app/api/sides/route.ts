@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebase-admin'
+import { getSides, createSide, updateSide, deleteSide } from '@/app/services/menu-service'
 
 // GET - Récupérer tous les accompagnements
 export async function GET() {
   try {
-    const snapshot = await db.collection('sides').get()
-    const sides = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    const sides = await getSides()  // ← Utilise le service
     return NextResponse.json(sides)
   } catch (error) {
     console.error('Erreur:', error)
@@ -20,18 +16,9 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json()
-    const docRef = await db.collection('sides').add({
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      imageUrl: data.imageUrl || '',
-      available: data.available !== undefined ? data.available : true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })
+    const result = await createSide(data)  // ← Utilise le service
     return NextResponse.json({ 
-      id: docRef.id, 
-      ...data,
+      ...result,
       message: 'Accompagnement créé avec succès' 
     })
   } catch (error) {
@@ -50,14 +37,10 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
     }
 
-    await db.collection('sides').doc(id).update({
-      ...updateData,
-      updatedAt: new Date()
-    })
+    const result = await updateSide(id, updateData)  // ← Utilise le service
     
     return NextResponse.json({ 
-      id, 
-      ...updateData,
+      ...result,
       message: 'Accompagnement mis à jour avec succès' 
     })
   } catch (error) {
@@ -69,13 +52,14 @@ export async function PUT(request: Request) {
 // DELETE - Supprimer un accompagnement
 export async function DELETE(request: Request) {
   try {
-    const { id } = await request.json()
+    const body = await request.json()
+    const { id } = body
     
     if (!id) {
       return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
     }
 
-    await db.collection('sides').doc(id).delete()
+    await deleteSide(id)  // ← Utilise le service
     
     return NextResponse.json({ 
       success: true,
