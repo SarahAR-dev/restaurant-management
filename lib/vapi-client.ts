@@ -1,4 +1,4 @@
-// lib/vapi-client.ts
+
 import Vapi from '@vapi-ai/web';
 
 let vapiInstance: Vapi | null = null;
