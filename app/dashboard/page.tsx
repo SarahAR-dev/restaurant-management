@@ -146,7 +146,7 @@ export default function DashboardPage() {
     <h1 className="text-3xl font-bold">Tableau de bord</h1>
     <p className="text-muted-foreground">Vue d'ensemble de votre restaurant</p>
   </div>
-  <VoiceOrderButton assistantId="ed53a860-9424-48ab-84fe-f3f36e7f6cad" />
+  <VoiceOrderButton assistantId={process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID!} />
 </div>
 
       <div className="grid gap-4 md:grid-cols-4">
