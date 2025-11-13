@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       customerPhone: customerPhone || '',
       tableNumber: tableNumber || null,
       items,
-      total,
+      totalPrice: total,
       notes: notes || '',
       status: 'pending' as const,
     };
