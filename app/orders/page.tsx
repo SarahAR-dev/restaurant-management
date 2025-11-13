@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { Input } from "@/components/ui/input"
+import { VoiceOrderButton } from '@/components/ui/VoiceOrderButton'
 import { Search, SlidersHorizontal, ChevronDown, Trash2, Eye, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -368,7 +369,7 @@ export default function OrdersPage() {
     preparing: orders.filter(o => o.status === "preparing").length,
     ready: orders.filter(o => o.status === "ready").length,
     completed: orders.filter(o => o.status === "completed").length,
-    revenue: orders.reduce((sum, o) => sum + o.totalPrice, 0),
+    revenue: orders.reduce((sum, o) => sum + o.totalPrice,0 ),
   }
 
   if (loading) {
@@ -387,6 +388,9 @@ export default function OrdersPage() {
           <h1 className="text-4xl font-bold mb-2">Commandes</h1>
           <p className="text-muted-foreground">Gérez et suivez toutes vos commandes</p>
         </div>
+
+        <div className="flex gap-2">
+          <VoiceOrderButton assistantId={process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID!} />
         <Dialog 
   open={isCreateDialogOpen} 
   onOpenChange={(open) => {
@@ -551,7 +555,7 @@ export default function OrdersPage() {
                     ) : (
                       filteredItemsByCategory.map((menuItem) => (
                         <SelectItem key={menuItem.id} value={menuItem.id}>
-                          {menuItem.name} - {menuItem.price.toFixed(2)} DA
+                          {menuItem.name} - {(menuItem.price || 0).toFixed(2)} DA
                         </SelectItem>
                       ))
                     )}
@@ -573,7 +577,7 @@ export default function OrdersPage() {
               
               {item.price > 0 && (
                 <div className="w-28 text-sm font-semibold flex items-center justify-end">
-                  {(item.price * item.quantity).toFixed(2)} DA
+                  {((item.price || 0) * (item.quantity || 0)).toFixed(2)} DA
                 </div>
               )}
               
@@ -615,7 +619,7 @@ export default function OrdersPage() {
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Total</span>
                       <span>
-                        {formData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)} DA
+                        {formData.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0).toFixed(2)} DA
                       </span>
                     </div>
                   </div>
@@ -648,6 +652,7 @@ export default function OrdersPage() {
           </DialogContent>
         </Dialog>
       </div>
+      </div>
 
       {/* Statistiques */}
       <div className="grid gap-4 md:grid-cols-5">
@@ -669,7 +674,7 @@ export default function OrdersPage() {
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Revenu total</p>
-          <p className="text-2xl font-bold">{stats.revenue.toFixed(2)} DA</p>
+          <p className="text-2xl font-bold">{(stats.revenue || 0).toFixed(2)} DA</p>
         </div>
       </div>
 
@@ -743,7 +748,7 @@ export default function OrdersPage() {
                   {order.items?.map(item => `${item.name} x${item.quantity}`).join(", ").substring(0, 40)}...
                 </td>
                 <td className="px-6 py-4 text-sm font-semibold text-foreground">
-                  {order.totalPrice.toFixed(2)} DA
+                  {(order.totalPrice || 0).toFixed(2)} DA
                 </td>
                 <td className="px-6 py-4 text-sm text-muted-foreground">
                   {formatDate(order.createdAt)}
@@ -835,7 +840,7 @@ export default function OrdersPage() {
                   {selectedOrder.items?.map((item, index) => (
                     <div key={index} className="flex justify-between text-sm">
                       <span>{item.name} x{item.quantity}</span>
-                      <span className="font-semibold">{(item.price * item.quantity).toFixed(2)} DA</span>
+                      <span className="font-semibold">{((item.price || 0) * (item.quantity || 0)).toFixed(2)} DA</span>
                     </div>
                   ))}
                 </div>
@@ -849,7 +854,7 @@ export default function OrdersPage() {
               <div className="pt-4 border-t">
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span>{selectedOrder.totalPrice.toFixed(2)} DA</span>
+                  <span>{(selectedOrder.totalPrice || 0).toFixed(2)} DA</span>
                 </div>
               </div>
             </div>

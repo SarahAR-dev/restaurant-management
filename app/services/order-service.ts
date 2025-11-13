@@ -46,7 +46,7 @@ export const orderService = {
   },
 
   // Créer une nouvelle commande
-  async createOrder(data: Omit<Order, "id" | "createdAt" | "updatedAt">) {
+  /*async createOrder(data: Omit<Order, "id" | "createdAt" | "updatedAt">) {
     try {
       const docRef = await db.collection("orders").add({
         ...data,
@@ -58,8 +58,39 @@ export const orderService = {
       console.error("Erreur lors de la création de la commande:", error)
       throw error
     }
-  },
+  },*/
 
+  // Créer une nouvelle commande
+async createOrder(data: Omit<Order, "id" | "createdAt" | "updatedAt">) {
+  try {
+    // ✅ Nettoyer les valeurs undefined
+    const cleanData: any = {
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    
+    // ✅ Supprimer les champs undefined
+    if (cleanData.tableNumber === undefined) {
+      delete cleanData.tableNumber
+    }
+    if (cleanData.customerName === undefined || cleanData.customerName === '') {
+      delete cleanData.customerName
+    }
+    if (cleanData.customerPhone === undefined || cleanData.customerPhone === '') {
+      delete cleanData.customerPhone
+    }
+    if (cleanData.notes === undefined || cleanData.notes === '') {
+      delete cleanData.notes
+    }
+    
+    const docRef = await db.collection("orders").add(cleanData)
+    return { id: docRef.id, ...data }
+  } catch (error) {
+    console.error("Erreur lors de la création de la commande:", error)
+    throw error
+  }
+},
   // Mettre à jour le statut d'une commande
   async updateOrderStatus(id: string, status: Order["status"]) {
     try {
@@ -80,10 +111,17 @@ export const orderService = {
       await db
         .collection("orders")
         .doc(id)
-        .update({
-          ...data,
-          updatedAt: new Date(),
-        })
+        // ✅ Nettoyer les valeurs undefined
+const cleanData: any = { updatedAt: new Date() }
+
+// ✅ Ajouter SEULEMENT les champs définis
+Object.keys(data).forEach(key => {
+  if (data[key as keyof Order] !== undefined) {
+    cleanData[key] = data[key as keyof Order]
+  }
+})
+
+await db.collection("orders").doc(id).update(cleanData)
       return { id, ...data }
     } catch (error) {
       console.error("Erreur lors de la mise à jour de la commande:", error)

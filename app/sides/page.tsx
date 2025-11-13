@@ -32,6 +32,7 @@ interface Side {
   imageUrl: string
   available: boolean
   reviews?: string[]
+  preparationTime?: number
 }
 
 export default function SidesPage() {
@@ -42,13 +43,21 @@ export default function SidesPage() {
   const [sideToDelete, setSideToDelete] = useState<Side | null>(null)
   const [editingSide, setEditingSide] = useState<Side | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    imageUrl: "",
-    available: true,
-  })
+  const [formData, setFormData] = useState<{
+  name: string
+  description: string
+  price: string
+  imageUrl: string
+  available: boolean
+  preparationTime: string
+}>({
+  name: "",
+  description: "",
+  price: "",
+  imageUrl: "",
+  available: true,
+  preparationTime: "",
+})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
 
@@ -90,6 +99,7 @@ export default function SidesPage() {
       price: parseFloat(formData.price),
       imageUrl: formData.imageUrl,
       available: formData.available,
+      preparationTime: formData.preparationTime ? parseInt(formData.preparationTime) : 10,
     }
 
     setIsSubmitting(true)
@@ -127,6 +137,7 @@ export default function SidesPage() {
         price: "",
         imageUrl: "",
         available: true,
+        preparationTime: "",
       })
       alert(editingSide ? "✅ Accompagnement modifié avec succès !" : "✅ Accompagnement créé avec succès !")
     } catch (error) {
@@ -145,6 +156,7 @@ export default function SidesPage() {
       price: side.price.toString(),
       imageUrl: side.imageUrl || "",
       available: side.available,
+      preparationTime: side.preparationTime?.toString() || "",
     })
     setIsDialogOpen(true)
   }
@@ -194,6 +206,43 @@ export default function SidesPage() {
     }
   }
 
+  const adjustPreparationTime = async (side: Side, adjustment: number) => {
+  const newTime = (side.preparationTime || 10) + adjustment
+  
+  if (newTime < 2) {
+    alert("⚠️ Le temps minimum est de 2 minutes")
+    return
+  }
+  
+  if (newTime > 60) {
+    alert("⚠️ Le temps maximum est de 60 minutes")
+    return
+  }
+  
+  try {
+    const response = await fetch("/api/sides", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        id: side.id,
+        name: side.name,
+        description: side.description,
+        price: side.price,
+        imageUrl: side.imageUrl,
+        available: side.available,
+        preparationTime: newTime
+      }),
+    })
+    
+    if (!response.ok) throw new Error("Erreur lors de la mise à jour")
+    
+    await loadSides()
+  } catch (error) {
+    console.error("Erreur:", error)
+    alert("❌ Impossible d'ajuster le temps")
+  }
+}
+
   const handleDialogClose = () => {
     setIsDialogOpen(false)
     setEditingSide(null)
@@ -203,6 +252,7 @@ export default function SidesPage() {
       price: "",
       imageUrl: "",
       available: true,
+      preparationTime: "",
     })
   }
 
@@ -295,6 +345,23 @@ export default function SidesPage() {
                   />
                 </div>
                 <div className="grid gap-2">
+  <Label htmlFor="preparationTime">Temps de préparation (minutes)</Label>
+  <Input
+    id="preparationTime"
+    type="number"
+    min="1"
+    value={formData.preparationTime}
+    onChange={(e) =>
+      setFormData({ ...formData, preparationTime: e.target.value })
+    }
+    placeholder="10"
+    required
+  />
+  <p className="text-xs text-muted-foreground">
+    Temps estimé de préparation en minutes
+  </p>
+</div>
+                <div className="grid gap-2">
                   <Label htmlFor="imageUrl">URL de l'image</Label>
                   <Input
                     id="imageUrl"
@@ -368,8 +435,10 @@ export default function SidesPage() {
         {filteredSides.map((side) => (
           <div
             key={side.id}
-            className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-          >
+            onClick={() => router.push(`/sides/${side.id}`)}
+  className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+>
+          
             {/* Image */}
             <div className="relative h-48 bg-muted overflow-hidden">
               <img
@@ -405,14 +474,45 @@ export default function SidesPage() {
 
               {/* Prix */}
               <div className="flex items-center justify-between">
-                <span className="text-xl font-bold text-primary">
-                  {side.price.toFixed(2)} DA
-                </span>
-                <span className="text-xs bg-muted px-2 py-1 rounded flex items-center gap-1">
-                  <Leaf className="h-4 w-4" />
-                  Accompagnements
-                </span>
-              </div>
+  <div className="flex flex-col gap-1">
+    <span className="text-xl font-bold text-primary">
+      {side.price.toFixed(2)} DA
+    </span>
+    
+    <div className="flex items-center gap-2 bg-muted px-2 py-1 rounded-md">
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          adjustPreparationTime(side, -2)
+        }}
+        className="text-base font-bold hover:bg-background px-2 rounded transition-colors"
+        title="Réduire de 2 minutes"
+      >
+        −
+      </button>
+      
+      <span className="text-sm font-medium min-w-[60px] text-center">
+        ⏱️ {side.preparationTime || 10} min
+      </span>
+      
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          adjustPreparationTime(side, 2)
+        }}
+        className="text-base font-bold hover:bg-background px-2 rounded transition-colors"
+        title="Ajouter 2 minutes"
+      >
+        +
+      </button>
+    </div>
+  </div>
+  
+  <span className="text-xs bg-muted px-2 py-1 rounded flex items-center gap-1">
+    <Leaf className="h-4 w-4" />
+    Accompagnement
+  </span>
+</div>
 
               {/* Boutons Modifier et Disponibilité */}
               <div className="flex gap-2 pt-2">

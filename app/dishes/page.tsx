@@ -33,6 +33,7 @@ interface MenuItem {
   imageUrl?: string
   available: boolean
   reviews?: string[]
+   preparationTime?: number
 }
 
 export default function DishesPage() {
@@ -43,14 +44,23 @@ export default function DishesPage() {
   const [dishToDelete, setDishToDelete] = useState<MenuItem | null>(null)
   const [editingDish, setEditingDish] = useState<MenuItem | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    category: "plat" as MenuItem["category"],
-    imageUrl: "",
-    available: true,
-  })
+  const [formData, setFormData] = useState<{
+  name: string
+  description: string
+  price: string
+  category: "entree" | "plat" | "dessert"
+  imageUrl: string
+  available: boolean
+  preparationTime: string
+}>({
+  name: "",
+  description: "",
+  price: "",
+  category: "plat",
+  imageUrl: "",
+  available: true,
+  preparationTime: "",
+})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
    
@@ -93,6 +103,7 @@ export default function DishesPage() {
       category: formData.category,
       imageUrl: formData.imageUrl,
       available: formData.available,
+      preparationTime: formData.preparationTime ? parseInt(formData.preparationTime) : 15,
     }
 
     setIsSubmitting(true)
@@ -131,6 +142,7 @@ export default function DishesPage() {
         category: "plat",
         imageUrl: "",
         available: true,
+        preparationTime: "",
       })
       alert(editingDish ? "✅ Plat modifié avec succès !" : "✅ Plat créé avec succès !")
     } catch (error) {
@@ -150,6 +162,7 @@ export default function DishesPage() {
       category: dish.category,
       imageUrl: dish.imageUrl || "",
       available: dish.available,
+      preparationTime: dish.preparationTime?.toString() || "15",
     })
     setIsDialogOpen(true)
   }
@@ -200,18 +213,57 @@ export default function DishesPage() {
     }
   }
 
-  const handleDialogClose = () => {
-    setIsDialogOpen(false)
-    setEditingDish(null)
-    setFormData({
-      name: "",
-      description: "",
-      price: "",
-      category: "plat",
-      imageUrl: "",
-      available: true,
-    })
+  const adjustPreparationTime = async (dish: MenuItem, adjustment: number) => {
+  const newTime = (dish.preparationTime || 15) + adjustment
+  
+  if (newTime < 5) {
+    alert("⚠️ Le temps minimum est de 5 minutes")
+    return
   }
+  
+  if (newTime > 120) {
+    alert("⚠️ Le temps maximum est de 120 minutes")
+    return
+  }
+  
+  try {
+    const response = await fetch("/api/dishes", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        id: dish.id,
+        name: dish.name,
+        description: dish.description,
+        price: dish.price,
+        category: dish.category,
+        imageUrl: dish.imageUrl,
+        available: dish.available,
+        preparationTime: newTime
+      }),
+    })
+    
+    if (!response.ok) throw new Error("Erreur lors de la mise à jour")
+    
+    await loadDishes()
+  } catch (error) {
+    console.error("Erreur:", error)
+    alert("❌ Impossible d'ajuster le temps")
+  }
+}
+
+  const handleDialogClose = () => {
+  setIsDialogOpen(false)
+  setEditingDish(null)
+  setFormData({
+    name: "",
+    description: "",
+    price: "",
+    category: "plat",
+    imageUrl: "",
+    available: true,
+    preparationTime: "",
+  })
+}
 
   if (loading) {
     return (
@@ -312,6 +364,23 @@ export default function DishesPage() {
                   </div>
                 </div>
                 <div className="grid gap-2">
+  <Label htmlFor="preparationTime">Temps de préparation (minutes)</Label>
+  <Input
+    id="preparationTime"
+    type="number"
+    min="1"
+    value={formData.preparationTime}
+    onChange={(e) =>
+      setFormData({ ...formData, preparationTime: e.target.value })
+    }
+    placeholder="15"
+    required
+  />
+  <p className="text-xs text-muted-foreground">
+    Temps estimé de préparation en minutes
+  </p>
+</div>
+                <div className="grid gap-2">
                   <Label htmlFor="imageUrl">URL de l'image</Label>
                   <Input
                     id="imageUrl"
@@ -383,7 +452,8 @@ export default function DishesPage() {
         {filteredDishes.map((dish) => (
           <div
             key={dish.id}
-            className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+            onClick={() => router.push(`/dishes/${dish.id}`)}
+  className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
           >
             <div className="relative h-48 bg-muted overflow-hidden">
               <img
@@ -417,14 +487,46 @@ export default function DishesPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-xl font-bold text-primary">
-                  {dish.price.toFixed(2)} DA
-                </span>
-                <span className="text-xs bg-muted px-2 py-1 rounded flex items-center gap-1">
-                  <UtensilsCrossed className="h-4 w-4" />
-                  {dish.category === "entree" ? "Entrée" : dish.category === "plat" ? "Plat" : "Dessert"}
-                </span>
-              </div>
+  <div className="flex flex-col gap-1">
+    <span className="text-xl font-bold text-primary">
+      {dish.price.toFixed(2)} DA
+    </span>
+    
+    {/* Boutons +/- pour ajuster le temps */}
+    <div className="flex items-center gap-2 bg-muted px-2 py-1 rounded-md">
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          adjustPreparationTime(dish, -5)
+        }}
+        className="text-base font-bold hover:bg-background px-2 rounded transition-colors"
+        title="Réduire de 5 minutes"
+      >
+        −
+      </button>
+      
+      <span className="text-sm font-medium min-w-[60px] text-center">
+        ⏱️ {dish.preparationTime || 15} min
+      </span>
+      
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          adjustPreparationTime(dish, 5)
+        }}
+        className="text-base font-bold hover:bg-background px-2 rounded transition-colors"
+        title="Ajouter 5 minutes"
+      >
+        +
+      </button>
+    </div>
+  </div>
+  
+  <span className="text-xs bg-muted px-2 py-1 rounded flex items-center gap-1">
+    <UtensilsCrossed className="h-4 w-4" />
+    {dish.category === "entree" ? "Entrée" : dish.category === "plat" ? "Plat" : "Dessert"}
+  </span>
+</div>
 
               {/* Boutons Modifier et Disponibilité */}
               <div className="flex gap-2 pt-2">

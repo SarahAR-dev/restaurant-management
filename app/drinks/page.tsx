@@ -376,9 +376,10 @@ export default function DrinksPage() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filteredDrinks.map((drink) => (
           <div
-            key={drink.id}
-            className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-          >
+  key={drink.id}
+  onClick={() => router.push(`/drinks/${drink.id}`)}
+  className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+>
             {/* Image */}
             <div className="relative h-48 bg-muted overflow-hidden">
               <img

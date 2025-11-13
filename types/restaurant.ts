@@ -15,7 +15,7 @@ export interface Order {
   items: OrderItem[]
   status: "pending" | "preparing" | "ready" | "completed" | "cancelled"
   orderType: 'dine-in' | 'takeout';
-  total: number
+  totalPrice: number
   createdAt: Date
   updatedAt: Date
   tableNumber?: number
