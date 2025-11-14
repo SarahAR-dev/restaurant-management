@@ -13,6 +13,8 @@ export async function OPTIONS(req: Request) {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
+
+    
 export async function POST(req: Request) {
   try {
     // Vérifier la clé privée Vapi
@@ -26,17 +28,14 @@ export async function POST(req: Request) {
         { status: 401, headers: corsHeaders }
       );
     }*/
-
     console.log('📋 Récupération du menu depuis Firebase...');
 
-    // Récupérer tous les articles depuis Firebase en parallèle
     const [dishes, drinks, sides] = await Promise.all([
       getDishes(),
       getDrinks(),
       getSides(),
     ]);
 
-    // Filtrer uniquement les articles DISPONIBLES
     const availableDishes = dishes.filter((d: any) => d.available);
     const availableDrinks = drinks.filter((d: any) => d.available);
     const availableSides = sides.filter((d: any) => d.available);
@@ -47,55 +46,32 @@ export async function POST(req: Request) {
       accompagnements: availableSides.length
     });
 
-    // Formater le menu en texte lisible pour l'IA Vapi
-    const menuText = `
-MENU COMPLET DU RESTAURANT:
+    const menuText = `MENU COMPLET DU RESTAURANT:
 
 PLATS PRINCIPAUX:
-${availableDishes.length > 0 
-  ? availableDishes.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 15} min)`).join('\n')
-  : '(Aucun plat disponible)'
-}
+${availableDishes.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 15} min)`).join('\n')}
 
 BOISSONS:
-${availableDrinks.length > 0
-  ? availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 2} min)`).join('\n')
-  : '(Aucune boisson disponible)'
-}
+${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 2} min)`).join('\n')}
 
 ACCOMPAGNEMENTS:
-${availableSides.length > 0
-  ? availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')
-  : '(Aucun accompagnement disponible)'
-}
+${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
 
-RÈGLES IMPORTANTES:
-- Tu ne peux proposer QUE ces articles
-- JAMAIS inventer ou suggérer des plats non listés
-- Toujours annoncer le prix en Dinars Algériens (DA)
-- Si un client demande quelque chose qui n'existe pas, propose une alternative de cette liste
-    `.trim();
-
-    // ✅ RETOURNER EN TEXTE BRUT
-    return new NextResponse(menuText, {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'text/plain; charset=utf-8'
-      }
-    });
+    // ✅ RETOUR SIMPLE POUR VAPI
+    return NextResponse.json(
+      menuText,
+      { headers: corsHeaders }
+    );
 
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération du menu:', error);
+    console.error('❌ Erreur:', error);
     return NextResponse.json(
-      { 
-        error: 'Erreur lors de la récupération du menu',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      'Erreur lors de la récupération du menu',
       { status: 500, headers: corsHeaders }
     );
   }
 }
+   
 
 // ✅ GET pour tester (sans authentification)
 export async function GET(req: Request) {
