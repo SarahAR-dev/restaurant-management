@@ -84,3 +84,33 @@ RÈGLES IMPORTANTES:
     );
   }
 }
+// ✅ GET pour tester (sans authentification)
+export async function GET(req: Request) {
+  try {
+    console.log('📋 TEST - Récupération du menu...');
+
+    const [dishes, drinks, sides] = await Promise.all([
+      getDishes(),
+      getDrinks(),
+      getSides(),
+    ]);
+
+    const availableDishes = dishes.filter((d: any) => d.available);
+    const availableDrinks = drinks.filter((d: any) => d.available);
+    const availableSides = sides.filter((d: any) => d.available);
+
+    return NextResponse.json({
+      success: true,
+      dishes: availableDishes,
+      drinks: availableDrinks,
+      sides: availableSides,
+      total: availableDishes.length + availableDrinks.length + availableSides.length
+    });
+  } catch (error) {
+    console.error('❌ Erreur:', error);
+    return NextResponse.json({ 
+      error: 'Erreur', 
+      details: error instanceof Error ? error.message : 'Unknown' 
+    }, { status: 500 });
+  }
+}

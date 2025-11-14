@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+
 interface OrderItem {
   name: string
   price: number
@@ -58,6 +59,7 @@ const statusConfig = {
 }
 
 export default function OrdersPage() {
+  const VAPI_ASSISTANT_ID = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || ''
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -388,9 +390,9 @@ export default function OrdersPage() {
           <h1 className="text-4xl font-bold mb-2">Commandes</h1>
           <p className="text-muted-foreground">Gérez et suivez toutes vos commandes</p>
         </div>
-
+          <VoiceOrderButton assistantId={VAPI_ASSISTANT_ID} />
         <div className="flex gap-2">
-          <VoiceOrderButton assistantId={process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID!} />
+          
         <Dialog 
   open={isCreateDialogOpen} 
   onOpenChange={(open) => {
