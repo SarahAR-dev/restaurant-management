@@ -76,17 +76,14 @@ RÈGLES IMPORTANTES:
 - Si un client demande quelque chose qui n'existe pas, propose une alternative de cette liste
     `.trim();
 
-    // Retourner le menu à Vapi avec CORS
-    return NextResponse.json({
-      success: true,
-      menu: menuText,
-      itemCount: {
-        dishes: availableDishes.length,
-        drinks: availableDrinks.length,
-        sides: availableSides.length,
-        total: availableDishes.length + availableDrinks.length + availableSides.length
+    // ✅ RETOURNER EN TEXTE BRUT
+    return new NextResponse(menuText, {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/plain; charset=utf-8'
       }
-    }, { headers: corsHeaders });
+    });
 
   } catch (error) {
     console.error('❌ Erreur lors de la récupération du menu:', error);
