@@ -16,7 +16,7 @@ export async function OPTIONS(req: Request) {
 export async function POST(req: Request) {
   try {
     // Vérifier la clé privée Vapi
-    const authHeader = req.headers.get('authorization');
+    /*const authHeader = req.headers.get('authorization');
     const expectedKey = process.env.VAPI_PRIVATE_KEY;
 
     if (!authHeader || authHeader !== `Bearer ${expectedKey}`) {
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
         { error: 'Unauthorized' }, 
         { status: 401, headers: corsHeaders }
       );
-    }
+    }*/
 
     console.log('📋 Récupération du menu depuis Firebase...');
 
