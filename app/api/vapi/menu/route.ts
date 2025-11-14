@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getDishes, getDrinks, getSides } from '@/app/services/menu-service';
 
+// ✅ CORS Headers pour Vapi
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// ✅ OPTIONS pour CORS preflight
+export async function OPTIONS(req: Request) {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(req: Request) {
   try {
     // Vérifier la clé privée Vapi
@@ -9,7 +21,10 @@ export async function POST(req: Request) {
 
     if (!authHeader || authHeader !== `Bearer ${expectedKey}`) {
       console.error('❌ Clé Vapi invalide pour getMenu');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' }, 
+        { status: 401, headers: corsHeaders }
+      );
     }
 
     console.log('📋 Récupération du menu depuis Firebase...');
@@ -38,19 +53,19 @@ MENU COMPLET DU RESTAURANT:
 
 PLATS PRINCIPAUX:
 ${availableDishes.length > 0 
-  ? availableDishes.map((d: any) => `- ${d.name}: ${d.price} DA`).join('\n')
+  ? availableDishes.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 15} min)`).join('\n')
   : '(Aucun plat disponible)'
 }
 
 BOISSONS:
 ${availableDrinks.length > 0
-  ? availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA`).join('\n')
+  ? availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 2} min)`).join('\n')
   : '(Aucune boisson disponible)'
 }
 
 ACCOMPAGNEMENTS:
 ${availableSides.length > 0
-  ? availableSides.map((d: any) => `- ${d.name}: ${d.price} DA`).join('\n')
+  ? availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')
   : '(Aucun accompagnement disponible)'
 }
 
@@ -61,7 +76,7 @@ RÈGLES IMPORTANTES:
 - Si un client demande quelque chose qui n'existe pas, propose une alternative de cette liste
     `.trim();
 
-    // Retourner le menu à Vapi
+    // Retourner le menu à Vapi avec CORS
     return NextResponse.json({
       success: true,
       menu: menuText,
@@ -71,7 +86,7 @@ RÈGLES IMPORTANTES:
         sides: availableSides.length,
         total: availableDishes.length + availableDrinks.length + availableSides.length
       }
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('❌ Erreur lors de la récupération du menu:', error);
@@ -80,10 +95,11 @@ RÈGLES IMPORTANTES:
         error: 'Erreur lors de la récupération du menu',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
+
 // ✅ GET pour tester (sans authentification)
 export async function GET(req: Request) {
   try {
@@ -105,12 +121,12 @@ export async function GET(req: Request) {
       drinks: availableDrinks,
       sides: availableSides,
       total: availableDishes.length + availableDrinks.length + availableSides.length
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('❌ Erreur:', error);
     return NextResponse.json({ 
       error: 'Erreur', 
       details: error instanceof Error ? error.message : 'Unknown' 
-    }, { status: 500 });
+    }, { status: 500, headers: corsHeaders });
   }
 }
