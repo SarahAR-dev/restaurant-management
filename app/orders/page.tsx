@@ -435,19 +435,23 @@ const saveSettings = async (newPickup: number, newDelivery: number) => {
     }
   }}
 >
-  {/* Sliders de temps */}
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {/* Sliders de temps - VERSION COMPACTE ET JOLIE */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+  
   {/* Pickup Time */}
-  <div className="bg-card border rounded-lg p-6">
-    <div className="flex items-center gap-2 mb-4">
-      <Clock className="h-5 w-5" />
-      <h3 className="font-semibold">Pickup Time</h3>
-    </div>
-    <div className="space-y-2">
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Set Pickup Time</span>
-        <span className="font-medium">{pickupTime} minutes</span>
+  <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <div className="p-1.5 bg-blue-100 rounded-lg">
+          <Clock className="h-4 w-4 text-blue-600" />
+        </div>
+        <h3 className="font-semibold text-sm">Pickup Time</h3>
       </div>
+      <span className="text-lg font-bold text-blue-600">{pickupTime} min</span>
+    </div>
+    
+    <div className="space-y-1.5">
+      <div className="text-xs text-muted-foreground">Set Pickup Time</div>
       <input
         type="range"
         min="5"
@@ -458,7 +462,10 @@ const saveSettings = async (newPickup: number, newDelivery: number) => {
           setPickupTime(newValue)
           saveSettings(newValue, deliveryTime)
         }}
-        className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+        className="w-full h-2 bg-blue-100 rounded-full appearance-none cursor-pointer slider-thumb"
+        style={{
+          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((pickupTime - 5) / 85) * 100}%, #dbeafe ${((pickupTime - 5) / 85) * 100}%, #dbeafe 100%)`
+        }}
       />
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>5 min</span>
@@ -468,16 +475,19 @@ const saveSettings = async (newPickup: number, newDelivery: number) => {
   </div>
 
   {/* Delivery Time */}
-  <div className="bg-card border rounded-lg p-6">
-    <div className="flex items-center gap-2 mb-4">
-      <Clock className="h-5 w-5" />
-      <h3 className="font-semibold">Delivery Time</h3>
-    </div>
-    <div className="space-y-2">
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Set Delivery Time</span>
-        <span className="font-medium">{deliveryTime} minutes</span>
+  <div className="bg-gradient-to-br from-green-50 to-white border border-green-100 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <div className="p-1.5 bg-green-100 rounded-lg">
+          <Clock className="h-4 w-4 text-green-600" />
+        </div>
+        <h3 className="font-semibold text-sm">Delivery Time</h3>
       </div>
+      <span className="text-lg font-bold text-green-600">{deliveryTime} min</span>
+    </div>
+    
+    <div className="space-y-1.5">
+      <div className="text-xs text-muted-foreground">Set Delivery Time</div>
       <input
         type="range"
         min="5"
@@ -488,7 +498,10 @@ const saveSettings = async (newPickup: number, newDelivery: number) => {
           setDeliveryTime(newValue)
           saveSettings(pickupTime, newValue)
         }}
-        className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+        className="w-full h-2 bg-green-100 rounded-full appearance-none cursor-pointer slider-thumb"
+        style={{
+          background: `linear-gradient(to right, #22c55e 0%, #22c55e ${((deliveryTime - 5) / 85) * 100}%, #dcfce7 ${((deliveryTime - 5) / 85) * 100}%, #dcfce7 100%)`
+        }}
       />
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>5 min</span>
