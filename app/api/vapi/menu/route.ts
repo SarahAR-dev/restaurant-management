@@ -17,19 +17,13 @@ export async function OPTIONS(req: Request) {
     
 export async function POST(req: Request) {
   try {
-    // Vérifier la clé privée Vapi
-    /*const authHeader = req.headers.get('authorization');
-    const expectedKey = process.env.VAPI_PRIVATE_KEY;
+    // ✅ 1. Lire le body pour récupérer le toolCallId
+    const body = await req.json();
+    const toolCallId = body.message?.toolCallId || 'getMenu';
+    
+    console.log('📋 Récupération du menu, toolCallId:', toolCallId);
 
-    if (!authHeader || authHeader !== `Bearer ${expectedKey}`) {
-      console.error('❌ Clé Vapi invalide pour getMenu');
-      return NextResponse.json(
-        { error: 'Unauthorized' }, 
-        { status: 401, headers: corsHeaders }
-      );
-    }*/
-    console.log('📋 Récupération du menu depuis Firebase...');
-
+    // ✅ 2. Récupérer le menu depuis Firebase
     const [dishes, drinks, sides] = await Promise.all([
       getDishes(),
       getDrinks(),
@@ -46,6 +40,7 @@ export async function POST(req: Request) {
       accompagnements: availableSides.length
     });
 
+    // ✅ 3. Formater le menu en texte
     const menuText = `MENU COMPLET DU RESTAURANT:
 
 PLATS PRINCIPAUX:
@@ -57,49 +52,33 @@ ${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTi
 ACCOMPAGNEMENTS:
 ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
 
-    // ✅ RETOUR SIMPLE POUR VAPI
-    return NextResponse.json(
-      menuText,
-      { headers: corsHeaders }
-    );
+    // ✅ 4. Retourner au FORMAT VAPI avec toolCallId
+    return NextResponse.json({
+      results: [
+        {
+          toolCallId: toolCallId,  // ← Renvoie le même ID
+          result: menuText         // ← Contenu du menu
+        }
+      ]
+    }, { 
+      headers: corsHeaders 
+    });
 
   } catch (error) {
     console.error('❌ Erreur:', error);
-    return NextResponse.json(
-      'Erreur lors de la récupération du menu',
-      { status: 500, headers: corsHeaders }
-    );
+    
+    // ✅ Même en cas d'erreur, respecter le format Vapi
+    return NextResponse.json({
+      results: [
+        {
+          toolCallId: 'getMenu',
+          result: 'Désolé, impossible de récupérer le menu pour le moment.'
+        }
+      ]
+    }, { 
+      status: 500, 
+      headers: corsHeaders 
+    });
   }
 }
    
-
-// ✅ GET pour tester (sans authentification)
-export async function GET(req: Request) {
-  try {
-    console.log('📋 TEST - Récupération du menu...');
-
-    const [dishes, drinks, sides] = await Promise.all([
-      getDishes(),
-      getDrinks(),
-      getSides(),
-    ]);
-
-    const availableDishes = dishes.filter((d: any) => d.available);
-    const availableDrinks = drinks.filter((d: any) => d.available);
-    const availableSides = sides.filter((d: any) => d.available);
-
-    return NextResponse.json({
-      success: true,
-      dishes: availableDishes,
-      drinks: availableDrinks,
-      sides: availableSides,
-      total: availableDishes.length + availableDrinks.length + availableSides.length
-    }, { headers: corsHeaders });
-  } catch (error) {
-    console.error('❌ Erreur:', error);
-    return NextResponse.json({ 
-      error: 'Erreur', 
-      details: error instanceof Error ? error.message : 'Unknown' 
-    }, { status: 500, headers: corsHeaders });
-  }
-}
