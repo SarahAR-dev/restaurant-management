@@ -13,7 +13,7 @@ export async function OPTIONS(req: Request) {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
-
+// ✅ POST - Appelé par Vapi pour récupérer le menu
 export async function POST(req: Request) {
   try {
     // ✅ Lire le body de manière sécurisée
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
     
     console.log('📋 Récupération du menu, toolCallId:', toolCallId);
 
+    // ✅ Récupérer le menu depuis Firebase
     const [dishes, drinks, sides] = await Promise.all([
       getDishes(),
       getDrinks(),
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
       accompagnements: availableSides.length
     });
 
+    // ✅ Formater le menu en texte
     const menuText = `MENU COMPLET DU RESTAURANT:
 
 PLATS PRINCIPAUX:
@@ -58,7 +60,7 @@ ${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTi
 ACCOMPAGNEMENTS:
 ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
 
-    // ✅ LOG pour voir ce qu'on retourne
+    // ✅ Préparer la réponse au format Vapi
     const response = {
       results: [
         {
@@ -82,6 +84,59 @@ ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTim
           result: 'Désolé, impossible de récupérer le menu pour le moment.'
         }
       ]
+    }, { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+// ✅ GET - Pour tester manuellement dans le navigateur
+export async function GET(req: Request) {
+  try {
+    console.log('📋 TEST GET - Récupération du menu...');
+
+    const [dishes, drinks, sides] = await Promise.all([
+      getDishes(),
+      getDrinks(),
+      getSides(),
+    ]);
+
+    const availableDishes = dishes.filter((d: any) => d.available);
+    const availableDrinks = drinks.filter((d: any) => d.available);
+    const availableSides = sides.filter((d: any) => d.available);
+
+    const menuText = `MENU COMPLET DU RESTAURANT:
+
+PLATS PRINCIPAUX:
+${availableDishes.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 15} min)`).join('\n')}
+
+BOISSONS:
+${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 2} min)`).join('\n')}
+
+ACCOMPAGNEMENTS:
+${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
+
+    return NextResponse.json({
+      success: true,
+      menu: menuText,
+      itemCount: {
+        dishes: availableDishes.length,
+        drinks: availableDrinks.length,
+        sides: availableSides.length
+      },
+      rawData: {
+        dishes: availableDishes,
+        drinks: availableDrinks,
+        sides: availableSides
+      }
+    }, { headers: corsHeaders });
+
+  } catch (error) {
+    console.error('❌ Erreur GET:', error);
+    return NextResponse.json({ 
+      error: 'Erreur lors de la récupération du menu',
+      details: error instanceof Error ? error.message : 'Unknown' 
     }, { 
       status: 500, 
       headers: corsHeaders 
