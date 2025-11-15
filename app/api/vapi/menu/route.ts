@@ -13,10 +13,8 @@ export async function OPTIONS(req: Request) {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
-// ✅ POST - Appelé par Vapi pour récupérer le menu
 export async function POST(req: Request) {
   try {
-    // ✅ Lire le body de manière sécurisée
     let body;
     try {
       body = await req.json();
@@ -24,14 +22,15 @@ export async function POST(req: Request) {
       body = {};
     }
     
-    // ✅ LOG pour debug
-    console.log('📥 Body reçu de Vapi:', JSON.stringify(body));
+    console.log('📥 Body reçu de Vapi:', JSON.stringify(body, null, 2));
     
-    const toolCallId = body.message?.toolCallId || body.toolCallId || 'getMenu';
+    // ✅ CORRECTION: toolCallId est dans toolCallList[0].id
+    const toolCallId = body.message?.toolCallList?.[0]?.id || 
+                       body.message?.toolCallId || 
+                       'getMenu';
     
-    console.log('📋 Récupération du menu, toolCallId:', toolCallId);
+    console.log('📋 Tool Call ID extrait:', toolCallId);
 
-    // ✅ Récupérer le menu depuis Firebase
     const [dishes, drinks, sides] = await Promise.all([
       getDishes(),
       getDrinks(),
@@ -48,7 +47,6 @@ export async function POST(req: Request) {
       accompagnements: availableSides.length
     });
 
-    // ✅ Formater le menu en texte
     const menuText = `MENU COMPLET DU RESTAURANT:
 
 PLATS PRINCIPAUX:
@@ -60,7 +58,6 @@ ${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTi
 ACCOMPAGNEMENTS:
 ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
 
-    // ✅ Préparer la réponse au format Vapi
     const response = {
       results: [
         {
@@ -70,18 +67,18 @@ ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTim
       ]
     };
     
-    console.log('📤 Réponse envoyée à Vapi:', JSON.stringify(response).substring(0, 200) + '...');
+    console.log('📤 Réponse:', JSON.stringify(response).substring(0, 300) + '...');
 
     return NextResponse.json(response, { headers: corsHeaders });
 
   } catch (error) {
-    console.error('❌ Erreur complète:', error);
+    console.error('❌ Erreur:', error);
     
     return NextResponse.json({
       results: [
         {
           toolCallId: 'getMenu',
-          result: 'Désolé, impossible de récupérer le menu pour le moment.'
+          result: 'Désolé, impossible de récupérer le menu.'
         }
       ]
     }, { 
