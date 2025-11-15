@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { VoiceOrderButton } from '@/components/ui/VoiceOrderButton'
-import { Search, SlidersHorizontal, ChevronDown, Trash2, Eye, Plus } from "lucide-react"
+import { Search, SlidersHorizontal, ChevronDown, Trash2, Eye, Plus, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -82,6 +82,9 @@ export default function OrdersPage() {
     items: [] as OrderItem[],
   })
 
+  const [pickupTime, setPickupTime] = useState(25)
+  const [deliveryTime, setDeliveryTime] = useState(25)
+
   // Filtres pour chaque ligne d'article
   const [itemFilters, setItemFilters] = useState<{
     category: string
@@ -91,6 +94,7 @@ export default function OrdersPage() {
   useEffect(() => {
     loadOrders()
     loadMenuItems()
+    loadSettings()
   }, [])
 
   const loadOrders = async () => {
@@ -107,6 +111,36 @@ export default function OrdersPage() {
       setLoading(false)
     }
   }
+
+  // Charger les temps depuis Firebase
+const loadSettings = async () => {
+  try {
+    const response = await fetch("/api/settings")
+    if (response.ok) {
+      const data = await response.json()
+      setPickupTime(data.pickupTime || 25)
+      setDeliveryTime(data.deliveryTime || 25)
+    }
+  } catch (error) {
+    console.error("Erreur chargement settings:", error)
+  }
+}
+
+// Sauvegarder les temps dans Firebase
+const saveSettings = async (newPickup: number, newDelivery: number) => {
+  try {
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pickupTime: newPickup,
+        deliveryTime: newDelivery,
+      }),
+    })
+  } catch (error) {
+    console.error("Erreur sauvegarde settings:", error)
+  }
+}
 
   const loadMenuItems = async () => {
     try {
@@ -401,6 +435,68 @@ export default function OrdersPage() {
     }
   }}
 >
+  {/* Sliders de temps */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {/* Pickup Time */}
+  <div className="bg-card border rounded-lg p-6">
+    <div className="flex items-center gap-2 mb-4">
+      <Clock className="h-5 w-5" />
+      <h3 className="font-semibold">Pickup Time</h3>
+    </div>
+    <div className="space-y-2">
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">Set Pickup Time</span>
+        <span className="font-medium">{pickupTime} minutes</span>
+      </div>
+      <input
+        type="range"
+        min="5"
+        max="90"
+        value={pickupTime}
+        onChange={(e) => {
+          const newValue = parseInt(e.target.value)
+          setPickupTime(newValue)
+          saveSettings(newValue, deliveryTime)
+        }}
+        className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+      />
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>5 min</span>
+        <span>90 min</span>
+      </div>
+    </div>
+  </div>
+
+  {/* Delivery Time */}
+  <div className="bg-card border rounded-lg p-6">
+    <div className="flex items-center gap-2 mb-4">
+      <Clock className="h-5 w-5" />
+      <h3 className="font-semibold">Delivery Time</h3>
+    </div>
+    <div className="space-y-2">
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">Set Delivery Time</span>
+        <span className="font-medium">{deliveryTime} minutes</span>
+      </div>
+      <input
+        type="range"
+        min="5"
+        max="90"
+        value={deliveryTime}
+        onChange={(e) => {
+          const newValue = parseInt(e.target.value)
+          setDeliveryTime(newValue)
+          saveSettings(pickupTime, newValue)
+        }}
+        className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+      />
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>5 min</span>
+        <span>90 min</span>
+      </div>
+    </div>
+  </div>
+</div>
           <DialogTrigger>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
