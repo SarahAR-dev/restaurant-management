@@ -88,7 +88,7 @@ ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTim
   }
 }
 
-// ✅ GET - Pour tester manuellement dans le navigateur
+// ✅ GET - Format Vapi propre (identique à POST)
 export async function GET(req: Request) {
   try {
     console.log('📋 TEST GET - Récupération du menu...');
@@ -114,26 +114,26 @@ ${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTi
 ACCOMPAGNEMENTS:
 ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
 
+    // ✅ FORMAT VAPI EXACT (comme dans la doc)
     return NextResponse.json({
-      success: true,
-      menu: menuText,
-      itemCount: {
-        dishes: availableDishes.length,
-        drinks: availableDrinks.length,
-        sides: availableSides.length
-      },
-      rawData: {
-        dishes: availableDishes,
-        drinks: availableDrinks,
-        sides: availableSides
-      }
+      results: [
+        {
+          toolCallId: "getMenu",
+          result: menuText
+        }
+      ]
     }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('❌ Erreur GET:', error);
-    return NextResponse.json({ 
-      error: 'Erreur lors de la récupération du menu',
-      details: error instanceof Error ? error.message : 'Unknown' 
+    
+    return NextResponse.json({
+      results: [
+        {
+          toolCallId: "getMenu",
+          result: "Erreur lors de la récupération du menu"
+        }
+      ]
     }, { 
       status: 500, 
       headers: corsHeaders 
