@@ -14,16 +14,22 @@ export async function OPTIONS(req: Request) {
 }
 
 
-    
 export async function POST(req: Request) {
   try {
-    // ✅ 1. Lire le body pour récupérer le toolCallId
-    const body = await req.json();
+    // ✅ Lire le body de manière sécurisée
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      // Si pas de body (ou body invalide), utiliser un objet vide
+      body = {};
+    }
+    
     const toolCallId = body.message?.toolCallId || 'getMenu';
     
     console.log('📋 Récupération du menu, toolCallId:', toolCallId);
 
-    // ✅ 2. Récupérer le menu depuis Firebase
+    // Le reste du code reste identique...
     const [dishes, drinks, sides] = await Promise.all([
       getDishes(),
       getDrinks(),
@@ -40,7 +46,6 @@ export async function POST(req: Request) {
       accompagnements: availableSides.length
     });
 
-    // ✅ 3. Formater le menu en texte
     const menuText = `MENU COMPLET DU RESTAURANT:
 
 PLATS PRINCIPAUX:
@@ -52,12 +57,11 @@ ${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTi
 ACCOMPAGNEMENTS:
 ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
 
-    // ✅ 4. Retourner au FORMAT VAPI avec toolCallId
     return NextResponse.json({
       results: [
         {
-          toolCallId: toolCallId,  // ← Renvoie le même ID
-          result: menuText         // ← Contenu du menu
+          toolCallId: toolCallId,
+          result: menuText
         }
       ]
     }, { 
@@ -67,7 +71,6 @@ ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTim
   } catch (error) {
     console.error('❌ Erreur:', error);
     
-    // ✅ Même en cas d'erreur, respecter le format Vapi
     return NextResponse.json({
       results: [
         {
@@ -81,4 +84,3 @@ ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTim
     });
   }
 }
-   
