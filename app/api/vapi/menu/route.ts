@@ -21,15 +21,16 @@ export async function POST(req: Request) {
     try {
       body = await req.json();
     } catch (e) {
-      // Si pas de body (ou body invalide), utiliser un objet vide
       body = {};
     }
     
-    const toolCallId = body.message?.toolCallId || 'getMenu';
+    // ✅ LOG pour debug
+    console.log('📥 Body reçu de Vapi:', JSON.stringify(body));
+    
+    const toolCallId = body.message?.toolCallId || body.toolCallId || 'getMenu';
     
     console.log('📋 Récupération du menu, toolCallId:', toolCallId);
 
-    // Le reste du code reste identique...
     const [dishes, drinks, sides] = await Promise.all([
       getDishes(),
       getDrinks(),
@@ -57,19 +58,22 @@ ${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTi
 ACCOMPAGNEMENTS:
 ${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
 
-    return NextResponse.json({
+    // ✅ LOG pour voir ce qu'on retourne
+    const response = {
       results: [
         {
           toolCallId: toolCallId,
           result: menuText
         }
       ]
-    }, { 
-      headers: corsHeaders 
-    });
+    };
+    
+    console.log('📤 Réponse envoyée à Vapi:', JSON.stringify(response).substring(0, 200) + '...');
+
+    return NextResponse.json(response, { headers: corsHeaders });
 
   } catch (error) {
-    console.error('❌ Erreur:', error);
+    console.error('❌ Erreur complète:', error);
     
     return NextResponse.json({
       results: [
