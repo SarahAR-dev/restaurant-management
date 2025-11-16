@@ -4,7 +4,6 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const SETTINGS_DOC_ID = 'restaurant_settings';
 
-// Récupérer les temps de préparation
 export async function GET() {
   try {
     const docRef = doc(db, 'settings', SETTINGS_DOC_ID);
@@ -14,7 +13,6 @@ export async function GET() {
       return NextResponse.json(docSnap.data());
     }
     
-    // Valeurs par défaut si aucun paramètre
     return NextResponse.json({
       pickupTime: 25,
       deliveryTime: 25,
@@ -28,12 +26,10 @@ export async function GET() {
   }
 }
 
-// Sauvegarder les temps de préparation
 export async function POST(req: Request) {
   try {
     const { pickupTime, deliveryTime } = await req.json();
 
-    // Validation
     if (pickupTime < 5 || pickupTime > 90) {
       return NextResponse.json(
         { error: 'pickupTime doit être entre 5 et 90' },

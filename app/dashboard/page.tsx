@@ -141,13 +141,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-  <div>
-    <h1 className="text-3xl font-bold">Tableau de bord</h1>
-    <p className="text-muted-foreground">Vue d'ensemble de votre restaurant</p>
-  </div>
-  <VoiceOrderButton assistantId={process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID!} />
-</div>
+    <div>
+      <h1 className="text-3xl font-bold">Tableau de bord</h1>
+      <p className="text-muted-foreground">Vue d'ensemble de votre restaurant</p>
+    </div>
 
       <div className="grid gap-4 md:grid-cols-4">
         {/* Commandes aujourd'hui */}

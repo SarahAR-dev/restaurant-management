@@ -42,15 +42,4 @@ export interface VapiInteraction {
   response: string
 }
 
-export interface Restaurant {
-  id: string
-  name: string
-  address: string
-  phone: string
-  email: string
-  openingHours: {
-    [key: string]: { open: string; close: string }
-  }
-  createdAt: Date
-  updatedAt: Date
-}
+

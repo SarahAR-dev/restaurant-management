@@ -417,100 +417,85 @@ const saveSettings = async (newPickup: number, newDelivery: number) => {
   }
 
   return (
-    <div className="flex-1 p-6 md:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Commandes</h1>
-          <p className="text-muted-foreground">Gérez et suivez toutes vos commandes</p>
-        </div>
-          <VoiceOrderButton assistantId={VAPI_ASSISTANT_ID} />
-        <div className="flex gap-2">
-          
-        <Dialog 
-  open={isCreateDialogOpen} 
-  onOpenChange={(open) => {
-    if (!isSubmitting) {
-      setIsCreateDialogOpen(open)
-    }
-  }}
->
-  {/* Sliders de temps - VERSION COMPACTE ET JOLIE */}
-<div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-  
-  {/* Pickup Time */}
-  <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2">
-        <div className="p-1.5 bg-blue-100 rounded-lg">
-          <Clock className="h-4 w-4 text-blue-600" />
-        </div>
-        <h3 className="font-semibold text-sm">Pickup Time</h3>
-      </div>
-      <span className="text-lg font-bold text-blue-600">{pickupTime} min</span>
-    </div>
-    
-    <div className="space-y-1.5">
-      <div className="text-xs text-muted-foreground">Set Pickup Time</div>
-      <input
-        type="range"
-        min="5"
-        max="90"
-        value={pickupTime}
-        onChange={(e) => {
-          const newValue = parseInt(e.target.value)
-          setPickupTime(newValue)
-          saveSettings(newValue, deliveryTime)
-        }}
-        className="w-full h-2 bg-blue-100 rounded-full appearance-none cursor-pointer slider-thumb"
-        style={{
-          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((pickupTime - 5) / 85) * 100}%, #dbeafe ${((pickupTime - 5) / 85) * 100}%, #dbeafe 100%)`
-        }}
-      />
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>5 min</span>
-        <span>90 min</span>
-      </div>
-    </div>
+   <div className="flex-1 p-6 md:p-8 space-y-6">
+  {/* Titre */}
+  <div>
+    <h1 className="text-4xl font-bold mb-2">Commandes</h1>
+    <p className="text-muted-foreground">Gérez et suivez toutes vos commandes</p>
   </div>
+      
+  {/* Sliders + Boutons sur la MÊME LIGNE */}
+  <div className="flex items-center justify-between gap-6">
+    {/* Sliders à gauche */}
+    <div className="flex gap-4 flex-1">
+      {/* Pickup Time */}
+      <div className="bg-card border rounded-lg p-4 flex-1">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-blue-600" />
+            <h3 className="font-semibold text-sm">Pickup Time</h3>
+          </div>
+          <span className="text-lg font-bold text-blue-600">{pickupTime} min</span>
+        </div>
+        <input
+          type="range"
+          min="5"
+          max="90"
+          value={pickupTime}
+          onChange={(e) => {
+            const newValue = parseInt(e.target.value)
+            setPickupTime(newValue)
+            saveSettings(newValue, deliveryTime)
+          }}
+          className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+          <span>5 min</span>
+          <span>90 min</span>
+        </div>
+      </div>
+      {/* Delivery Time */}
+      <div className="bg-card border rounded-lg p-4 flex-1">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-green-600" />
+            <h3 className="font-semibold text-sm">Delivery Time</h3>
+          </div>
+          <span className="text-lg font-bold text-green-600">{deliveryTime} min</span>
+        </div>
+        <input
+          type="range"
+          min="5"
+          max="90"
+          value={deliveryTime}
+          onChange={(e) => {
+            const newValue = parseInt(e.target.value)
+            setDeliveryTime(newValue)
+            saveSettings(pickupTime, newValue)
+          }}
+          className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+          <span>5 min</span>
+          <span>90 min</span>
+        </div>
+      </div>
+    </div>
 
-  {/* Delivery Time */}
-  <div className="bg-gradient-to-br from-green-50 to-white border border-green-100 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2">
-        <div className="p-1.5 bg-green-100 rounded-lg">
-          <Clock className="h-4 w-4 text-green-600" />
-        </div>
-        <h3 className="font-semibold text-sm">Delivery Time</h3>
-      </div>
-      <span className="text-lg font-bold text-green-600">{deliveryTime} min</span>
-    </div>
-    
-    <div className="space-y-1.5">
-      <div className="text-xs text-muted-foreground">Set Delivery Time</div>
-      <input
-        type="range"
-        min="5"
-        max="90"
-        value={deliveryTime}
-        onChange={(e) => {
-          const newValue = parseInt(e.target.value)
-          setDeliveryTime(newValue)
-          saveSettings(pickupTime, newValue)
+
+    {/* Boutons à droite */}
+    <div className="flex flex-col gap-2">
+      <VoiceOrderButton assistantId={VAPI_ASSISTANT_ID} />
+      
+      <Dialog 
+        open={isCreateDialogOpen} 
+        onOpenChange={(open) => {
+          if (!isSubmitting) {
+            setIsCreateDialogOpen(open)
+          }
         }}
-        className="w-full h-2 bg-green-100 rounded-full appearance-none cursor-pointer slider-thumb"
-        style={{
-          background: `linear-gradient(to right, #22c55e 0%, #22c55e ${((deliveryTime - 5) / 85) * 100}%, #dcfce7 ${((deliveryTime - 5) / 85) * 100}%, #dcfce7 100%)`
-        }}
-      />
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>5 min</span>
-        <span>90 min</span>
-      </div>
-    </div>
-  </div>
-</div>
-          <DialogTrigger>
+      >
+        <DialogTrigger>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
               Nouvelle commande
@@ -764,6 +749,8 @@ const saveSettings = async (newPickup: number, newDelivery: number) => {
         </Dialog>
       </div>
       </div>
+
+    
 
       {/* Statistiques */}
       <div className="grid gap-4 md:grid-cols-5">
