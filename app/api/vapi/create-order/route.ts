@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    console.log('📥 Webhook Vapi reçu:', JSON.stringify(body, null, 2));
+console.log('📥 Webhook Vapi reçu:', JSON.stringify(body, null, 2));
 
     // Vapi envoie les données dans le format "message.functionCall"
     const functionCall = body.message?.functionCall;
@@ -76,12 +76,13 @@ export async function POST(req: Request) {
     console.log('✅ Commande créée avec succès:', newOrder.id);
 
     // Réponse à Vapi
-    return NextResponse.json({
-      success: true,
-      orderId: newOrder.id,
-      total: total,
-      message: `Commande créée avec succès! Total: ${total} DA`,
-    });
+    // Réponse à Vapi (format requis)
+return NextResponse.json({
+  results: [{
+    toolCallId: functionCall.id || body.message?.toolCallId,
+    result: `Commande créée avec succès pour ${customerName}! Total: ${total} DA. Numéro de commande: ${newOrder.id}`
+  }]
+});
 
   } catch (error) {
     console.error('❌ Erreur webhook Vapi:', error);
