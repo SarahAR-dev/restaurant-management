@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDishes, getDrinks, getSides } from '@/app/services/menu-service';
+import { getSettings, type RestaurantSettings } from '@/app/services/settings-service';
 
 // ✅ CORS Headers pour Vapi
 const corsHeaders = {
@@ -31,10 +32,11 @@ export async function POST(req: Request) {
     
     console.log('📋 Tool Call ID extrait:', toolCallId);
 
-    const [dishes, drinks, sides] = await Promise.all([
+    const [dishes, drinks, sides, settings] = await Promise.all([
       getDishes(),
       getDrinks(),
       getSides(),
+      getSettings(),
     ]);
 
     const availableDishes = dishes.filter((d: any) => d.available);
@@ -49,14 +51,18 @@ export async function POST(req: Request) {
 
     const menuText = `MENU COMPLET DU RESTAURANT:
 
+TEMPS DE PRÉPARATION:
+- Sur place (dine-in): ${settings.pickupTime} minutes
+- À emporter (takeaway): ${settings.pickupTime + settings.deliveryTime} minutes
+
 PLATS PRINCIPAUX:
-${availableDishes.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 15} min)`).join('\n')}
+${availableDishes.map((d: any) => `- ${d.name}: ${d.price} DA`).join('\n')}
 
 BOISSONS:
-${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 2} min)`).join('\n')}
+${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA`).join('\n')}
 
 ACCOMPAGNEMENTS:
-${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
+${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA`).join('\n')}`;
 
     const response = {
       results: [
@@ -93,10 +99,11 @@ export async function GET(req: Request) {
   try {
     console.log('📋 TEST GET - Récupération du menu...');
 
-    const [dishes, drinks, sides] = await Promise.all([
+    const [dishes, drinks, sides, settings] = await Promise.all([
       getDishes(),
       getDrinks(),
       getSides(),
+      getSettings(),
     ]);
 
     const availableDishes = dishes.filter((d: any) => d.available);
@@ -105,14 +112,18 @@ export async function GET(req: Request) {
 
     const menuText = `MENU COMPLET DU RESTAURANT:
 
+TEMPS DE PRÉPARATION:
+- Sur place (dine-in): ${settings.pickupTime} minutes
+- À emporter (takeaway): ${settings.pickupTime + settings.deliveryTime} minutes
+
 PLATS PRINCIPAUX:
-${availableDishes.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 15} min)`).join('\n')}
+${availableDishes.map((d: any) => `- ${d.name}: ${d.price} DA`).join('\n')}
 
 BOISSONS:
-${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 2} min)`).join('\n')}
+${availableDrinks.map((d: any) => `- ${d.name}: ${d.price} DA`).join('\n')}
 
 ACCOMPAGNEMENTS:
-${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA (${d.preparationTime || 10} min)`).join('\n')}`;
+${availableSides.map((d: any) => `- ${d.name}: ${d.price} DA`).join('\n')}`;
 
     // ✅ FORMAT VAPI EXACT (comme dans la doc)
     return NextResponse.json({

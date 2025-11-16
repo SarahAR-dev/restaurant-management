@@ -135,3 +135,4 @@ export async function deleteSide(id: string) {
   await db.collection('sides').doc(id).delete()
   return { id }
 }
+

@@ -1,22 +1,10 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-
-const SETTINGS_DOC_ID = 'restaurant_settings';
+import { getSettings, saveSettings } from '@/app/services/settings-service';
 
 export async function GET() {
   try {
-    const docRef = doc(db, 'settings', SETTINGS_DOC_ID);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      return NextResponse.json(docSnap.data());
-    }
-    
-    return NextResponse.json({
-      pickupTime: 25,
-      deliveryTime: 25,
-    });
+    const settings = await getSettings();
+    return NextResponse.json(settings);
   } catch (error) {
     console.error('Erreur GET settings:', error);
     return NextResponse.json(
@@ -44,13 +32,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const docRef = doc(db, 'settings', SETTINGS_DOC_ID);
-    await setDoc(docRef, {
-      pickupTime,
-      deliveryTime,
-      updatedAt: new Date().toISOString(),
-    });
-
+    await saveSettings(pickupTime, deliveryTime);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Erreur POST settings:', error);
