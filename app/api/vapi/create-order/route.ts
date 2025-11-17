@@ -95,3 +95,13 @@ return NextResponse.json({
     );
   }
 }
+
+/// pour tester l url
+export async function GET(req: Request) {
+  return NextResponse.json({
+    results: [{
+      toolCallId: "test_123",
+      result: "✅ API create-order fonctionne! Cette route accepte les requêtes POST de Vapi."
+    }]
+  });
+}
