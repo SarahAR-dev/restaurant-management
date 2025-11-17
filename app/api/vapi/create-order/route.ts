@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { orderService } from '@/app/services/order-service';
+import { getDishes, getDrinks, getSides } from '@/app/services/menu-service';
+
 
 export async function POST(req: Request) {
   try {
@@ -53,23 +55,46 @@ const {
       }, { status: 400 });
     }
 
-    // Calculer le total
-    const total = items.reduce(
-      (sum: number, item: any) => sum + (item.price * item.quantity), 
-      0
-    );
+// Récupérer les prix depuis Firebase
+const dishes: any[] = await getDishes();
+const drinks: any[] = await getDrinks();
+const sides: any[] = await getSides();
+
+// Combiner tous les items du menu
+const allMenuItems: any[] = [...dishes, ...drinks, ...sides];
+
+// Enrichir les items avec les prix
+const enrichedItems = items.map((item: any) => {
+  const menuItem = allMenuItems.find(
+    (mi) => mi.name.toLowerCase() === item.name.toLowerCase()
+  );
+  
+  return {
+    ...item,
+    price: menuItem?.price || 0,
+  };
+});
+
+// Calculer le total avec les prix enrichis
+const total = enrichedItems.reduce(
+  (sum: number, item: any) => sum + (item.price * item.quantity), 
+  0
+);
 
     // Créer la commande dans Firebase
-    const orderData = {
-      orderType: orderType || 'takeaway',
-      customerName,
-      customerPhone: customerPhone || '',
-      tableNumber: tableNumber || null,
-      items,
-      totalPrice: total,
-      notes: notes || '',
-      status: 'pending' as const,
-    };
+  // Convertir le type de commande
+const finalOrderType: 'takeout' | 'dine-in' = orderType === 'a_emporter' ? 'takeout' : 'dine-in';
+
+const orderData: any = {
+  orderType: finalOrderType,
+  customerName,
+  customerPhone: customerPhone || '',
+  tableNumber: tableNumber || null,
+  items: enrichedItems,
+  totalPrice: total,
+  notes: notes || '',
+  status: 'pending' as const,
+};
 
     console.log('💾 Création de la commande:', orderData);
 
