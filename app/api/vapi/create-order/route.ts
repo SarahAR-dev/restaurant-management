@@ -15,33 +15,35 @@ export async function POST(req: Request) {
     const body = await req.json();
 console.log('📥 Webhook Vapi reçu:', JSON.stringify(body, null, 2));
 
-    // Vapi envoie les données dans le format "message.functionCall"
-    const functionCall = body.message?.functionCall;
-    
-    if (!functionCall) {
-      console.error('❌ Pas de functionCall dans le webhook');
-      return NextResponse.json({ error: 'No function call data' }, { status: 400 });
-    }
+   // Vapi envoie les données dans "message.toolCalls"
+const toolCalls = body.message?.toolCalls;
 
-    const { name, parameters } = functionCall;
+if (!toolCalls || toolCalls.length === 0) {
+  console.error('❌ Pas de toolCalls dans le webhook');
+  return NextResponse.json({ error: 'No tool calls data' }, { status: 400 });
+}
 
-    // Vérifier que c'est bien un appel pour créer une commande
-    if (name !== 'createOrder') {
-      console.error('❌ Function name incorrect:', name);
-      return NextResponse.json({ error: 'Invalid function name' }, { status: 400 });
-    }
+const toolCall = toolCalls[0]; // Premier tool call
+const { id, function: func } = toolCall;
+const { name, arguments: parameters } = func;
 
-    console.log('📋 Paramètres de la commande:', parameters);
+// Vérifier que c'est bien un appel pour créer une commande
+if (name !== 'createOrder') {
+  console.error('❌ Function name incorrect:', name);
+  return NextResponse.json({ error: 'Invalid function name' }, { status: 400 });
+}
 
-    // Extraire les données de la commande
-    const {
-      orderType,
-      customerName,
-      customerPhone,
-      tableNumber,
-      items,
-      notes,
-    } = parameters;
+console.log('📋 Paramètres de la commande:', parameters);
+
+// Extraire les données de la commande
+const {
+  orderType,
+  customerName,
+  customerPhone,
+  tableNumber,
+  items,
+  notes,
+} = parameters;
 
     // Validation
     if (!customerName || !items || items.length === 0) {
@@ -76,10 +78,9 @@ console.log('📥 Webhook Vapi reçu:', JSON.stringify(body, null, 2));
     console.log('✅ Commande créée avec succès:', newOrder.id);
 
     // Réponse à Vapi
-    // Réponse à Vapi (format requis)
-return NextResponse.json({
+    return NextResponse.json({
   results: [{
-    toolCallId: functionCall.id || body.message?.toolCallId,
+    toolCallId: id,  // ✅ Utilise l'id du toolCall
     result: `Commande créée avec succès pour ${customerName}! Total: ${total} DA. Numéro de commande: ${newOrder.id}`
   }]
 });
