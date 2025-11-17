@@ -90,33 +90,30 @@ const sides: any[] = await getSides();
 // Combiner tous les items du menu
 const allMenuItems: any[] = [...dishes, ...drinks, ...sides];
 
-// Enrichir les items avec les prix
+// Vapi envoie déjà les prix, on utilise directement
 const enrichedItems = items.map((item: any) => {
-  const menuItem = allMenuItems.find(
-    (mi) => mi.name.toLowerCase() === item.name.toLowerCase()
-  );
-  
   return {
-    ...item,
-    price: menuItem?.price || 0,
+    name: item.name,
+    category: item.category,
+    quantity: item.quantity,
+    price: item.price || 0,  // Vapi envoie le prix
+    notes: item.notes || '',
   };
 });
 
-// Calculer le total avec les prix enrichis
+// Calculer le total
 const total = enrichedItems.reduce(
   (sum: number, item: any) => sum + (item.price * item.quantity), 
   0
 );
 
-    // Créer la commande dans Firebase
-  // Convertir le type de commande
+// Convertir le type de commande
 const finalOrderType: 'takeout' | 'dine-in' = orderType === 'a_emporter' ? 'takeout' : 'dine-in';
-
 const orderData: any = {
   orderType: finalOrderType,
-  customerName: customerName || 'Client sur place',  // Nom ou défaut pour sur place
-  customerPhone: customerPhone || '',  // Téléphone (vide si sur place)
-  tableNumber: tableNumber || null,  // Numéro de table (null si à emporter)
+  customerName: customerName || '',
+  customerPhone: customerPhone || '',
+  tableNumber: tableNumber || null,
   items: enrichedItems,
   totalPrice: total,
   notes: notes || '',
