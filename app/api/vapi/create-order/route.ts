@@ -48,12 +48,39 @@ const {
 } = parameters;
 
     // Validation
-    if (!customerName || !items || items.length === 0) {
-      console.error('❌ Données invalides:', { customerName, items });
-      return NextResponse.json({ 
-        error: 'customerName et items sont requis' 
-      }, { status: 400 });
-    }
+// Validation des items
+if (!items || items.length === 0) {
+  console.error('❌ Données invalides:', { items });
+  return NextResponse.json({ 
+    error: 'items est requis' 
+  }, { status: 400 });
+}
+
+// Validation pour commande SUR PLACE
+if (orderType === 'sur_place') {
+  if (!tableNumber) {
+    console.error('❌ Numéro de table manquant pour commande sur place');
+    return NextResponse.json({ 
+      error: 'tableNumber est requis pour les commandes sur place' 
+    }, { status: 400 });
+  }
+}
+
+// Validation pour commande À EMPORTER
+if (orderType === 'a_emporter') {
+  if (!customerName) {
+    console.error('❌ Nom client manquant pour commande à emporter');
+    return NextResponse.json({ 
+      error: 'customerName est requis pour les commandes à emporter' 
+    }, { status: 400 });
+  }
+  if (!customerPhone) {
+    console.error('❌ Téléphone manquant pour commande à emporter');
+    return NextResponse.json({ 
+      error: 'customerPhone est requis pour les commandes à emporter' 
+    }, { status: 400 });
+  }
+}
 
 // Récupérer les prix depuis Firebase
 const dishes: any[] = await getDishes();
@@ -87,9 +114,9 @@ const finalOrderType: 'takeout' | 'dine-in' = orderType === 'a_emporter' ? 'take
 
 const orderData: any = {
   orderType: finalOrderType,
-  customerName,
-  customerPhone: customerPhone || '',
-  tableNumber: tableNumber || null,
+  customerName: customerName || 'Client sur place',  // Nom ou défaut pour sur place
+  customerPhone: customerPhone || '',  // Téléphone (vide si sur place)
+  tableNumber: tableNumber || null,  // Numéro de table (null si à emporter)
   items: enrichedItems,
   totalPrice: total,
   notes: notes || '',
