@@ -67,7 +67,7 @@ export default function DashboardPage() {
     return orderDate === today
   })
 
-  const todayRevenue = todayOrders.reduce((sum, order) => sum + order.totalPrice, 0)
+  const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
 
   const allItems = [...dishes, ...drinks, ...sides]
   const availableItemsCount = allItems.filter(item => item.available).length
@@ -87,14 +87,16 @@ export default function DashboardPage() {
   const itemStats: { [key: string]: { count: number; revenue: number } } = {}
   
   orders.forEach(order => {
+  if (order.items && Array.isArray(order.items)) {
     order.items.forEach(item => {
       if (!itemStats[item.name]) {
         itemStats[item.name] = { count: 0, revenue: 0 }
       }
-      itemStats[item.name].count += item.quantity
-      itemStats[item.name].revenue += item.price * item.quantity
+      itemStats[item.name].count += (item.quantity || 0)
+      itemStats[item.name].revenue += (item.price || 0) * (item.quantity || 0)
     })
-  })
+  }
+})
 
   const popularItems = Object.entries(itemStats)
     .map(([name, stats]) => ({
@@ -119,7 +121,7 @@ export default function DashboardPage() {
     ? Math.round(((todayOrders.length - yesterdayOrders.length) / yesterdayOrders.length) * 100)
     : 0
 
-  const yesterdayRevenue = yesterdayOrders.reduce((sum, order) => sum + order.totalPrice, 0)
+  const yesterdayRevenue = yesterdayOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
   const revenueGrowth = yesterdayRevenue > 0
     ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
     : 0
@@ -206,7 +208,7 @@ export default function DashboardPage() {
             <p className="font-semibold">{order.customerName || 'Client'}</p>
           </div>
           <div className="text-right">
-            <p className="font-semibold">{order.totalPrice.toFixed(2)} DA</p>
+            <p className="font-semibold">{(order.totalPrice || 0).toFixed(2)} DA</p>
             <p className="text-xs text-gray-500">{statusLabels[order.status]}</p>
           </div>
         </div>
@@ -228,7 +230,7 @@ export default function DashboardPage() {
                     <p className="font-semibold">{item.name}</p>
                     <p className="text-sm text-gray-500">{item.commands} commandes</p>
                   </div>
-                  <p className="font-semibold">{item.revenue.toFixed(2)} DA</p>
+                  <p className="font-semibold">{(item.revenue || 0).toFixed(2)} DA</p>
                 </div>
               ))}
             </div>
